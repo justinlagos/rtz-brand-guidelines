@@ -474,6 +474,30 @@ ss.forEach(s=>ob.observe(s));
 const stg=document.querySelectorAll('.stagger');
 const ob2=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting)en.target.classList.add('vis')})},{threshold:.1});
 stg.forEach(s=>ob2.observe(s));
+
+// Auto-report page height to parent window (for Wix iframe auto-resize)
+(function(){
+  let lastHeight = 0;
+  function report(){
+    const h = Math.max(
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight,
+      document.documentElement.offsetHeight,
+      document.body.offsetHeight
+    );
+    if (Math.abs(h - lastHeight) < 2) return;
+    lastHeight = h;
+    try { window.parent.postMessage({type:'rtz-height', height: h}, '*'); } catch(e){}
+  }
+  window.addEventListener('load', report);
+  window.addEventListener('resize', report);
+  if (window.ResizeObserver) new ResizeObserver(report).observe(document.body);
+  // Also fire on image load events in case late-loading media changes height
+  document.querySelectorAll('img').forEach(img => {
+    if (!img.complete) img.addEventListener('load', report);
+  });
+  [100, 500, 1500, 3000].forEach(d => setTimeout(report, d));
+})();
 </script>
 </body>
 </html>
